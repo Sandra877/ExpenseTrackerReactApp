@@ -4,6 +4,7 @@ import { RouterProvider } from 'react-router/dom'
 import { Register } from './components/auth/Register'
 import { Login } from './components/auth/Login'
 import LandingPage from './Pages/LandingPage'
+import NewuserPage from './Pages/NewuserPage'
 import { AboutPage } from './Pages/AboutPage'
 import { Verification } from './components/auth/Verification'
 import Error from "./components/nav/Error"
@@ -13,6 +14,10 @@ function App() {
   const router = createBrowserRouter([
     {
       path: '/',
+      element: <NewuserPage />
+    },
+     {
+      path: '/landingpage',
       element: <LandingPage />
     },
     {
