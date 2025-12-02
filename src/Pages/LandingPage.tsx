@@ -1,59 +1,196 @@
-import { Footer } from "../components/footer/Footer";
+import { useEffect, useState } from "react";
 import Navbar from "../components/nav/Navbar";
 import AddExpenseForm from "../components/AddExpenseForm";
 import ExpenseList from "../components/ExpenseList";
+import { Footer } from "../components/footer/Footer";
 import { categories } from "../assets/ExpenseData/categories";
-import { useState } from "react";
+
 import type { Expense } from "../components/AddExpenseForm";
-import { Wallet, TrendingUp } from "lucide-react"; // optional icons
+import { Wallet, TrendingUp } from "lucide-react";
+import { API_URL } from "../api";
+import { toast } from "react-toastify";
 
 const LandingPage = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [editing, setEditing] = useState<Expense | null>(null);
 
-  const handleSave = (expense: Expense) => {
-    if (editing) {
-      setExpenses((prev) =>
-        prev.map((e) => (e.id === expense.id ? expense : e))
-      );
-      setEditing(null);
-    } else {
-      setExpenses((prev) => [expense, ...prev]);
+  // ------------------------------
+  // 🔥 1. GET expenses on page load
+  // ------------------------------
+  useEffect(() => {
+    const fetchExpenses = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const res = await fetch(`${API_URL}/api/expenses`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          toast.error(data.error || "Failed to fetch expenses");
+          return;
+        }
+
+        // Map backend format to frontend format
+        const converted = data.map((item: any) => {
+          const categoryObj = categories.find(c => c.name === item.category);
+
+          return {
+            id: item.id,
+            title: item.title,
+            amount: item.amount,
+            note: item.note || "",
+            currency: "KES",
+            expenseDate: item.date,
+            categoryId: categoryObj ? categoryObj.id : null,
+          };
+        });
+
+        setExpenses(converted);
+      } catch (error) {
+        console.error(error);
+        toast.error("Error loading expenses");
+      }
+    };
+
+    fetchExpenses();
+  }, []);
+
+  // ----------------------------------------
+  // 🔥 2. ADD or EDIT expense (POST or PUT)
+  // ----------------------------------------
+  const handleSave = async (expense: Expense) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Not authenticated");
+      return;
+    }
+
+    const categoryName = categories.find(c => c.id === expense.categoryId)?.name;
+
+    const payload = {
+      title: expense.title || "Untitled",
+      amount: expense.amount,
+      category: categoryName,
+      date: expense.expenseDate,
+    };
+
+    try {
+      if (editing) {
+        // --------------------------
+        // 🔥 EDIT (PUT)
+        // --------------------------
+        const res = await fetch(`${API_URL}/api/expenses/${expense.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          toast.error(data.error || "Failed to update expense");
+          return;
+        }
+
+        toast.success("Expense updated!");
+
+        setExpenses(prev =>
+          prev.map(e => (e.id === expense.id ? expense : e))
+        );
+
+        setEditing(null);
+
+      } else {
+        // --------------------------
+        // 🔥 ADD (POST)
+        // --------------------------
+        const res = await fetch(`${API_URL}/api/expenses`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const created = await res.json();
+
+        if (!res.ok) {
+          toast.error(created.error || "Failed to add expense");
+          return;
+        }
+
+        toast.success("Expense added!");
+
+        // Convert backend id → frontend
+        setExpenses(prev => [
+          {
+            ...expense,
+            id: created.id,
+          },
+          ...prev,
+        ]);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Server error");
     }
   };
 
-  const handleEdit = (expense: Expense) => {
-    setEditing(expense);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  // ------------------------
+  // 🔥 3. DELETE expense
+  // ------------------------
+  const handleDelete = async (id: number) => {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(`${API_URL}/api/expenses/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      toast.error(error.error || "Failed to delete expense");
+      return;
+    }
+
+    toast.success("Expense deleted");
+
+    setExpenses(prev => prev.filter(e => e.id !== id));
+
+    if (editing && editing.id === id) {
+      setEditing(null);
+    }
   };
 
-  const handleDelete = (id: number) => {
-    setExpenses((prev) => prev.filter((e) => e.id !== id));
-    if (editing && editing.id === id) setEditing(null);
-  };
-
+  // ------------------------
+  // RENDER PAGE UI
+  // ------------------------
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-orange-50 via-white to-orange-100">
-      {/* 🧭 Navbar */}
       <Navbar />
 
-      {/* 🌅 Hero Section */}
       <section className="text-center py-16 px-6 bg-gradient-to-r from-orange-100 to-orange-50 border-b border-orange-200">
-        <div className="flex flex-col items-center justify-center">
-          <Wallet className="w-16 h-16 text-orange-500 mb-4 animate-bounce" />
-          <h1 className="text-5xl font-extrabold text-orange-600 mb-3">
-            Welcome to <span className="text-gray-800">ExpenseMate</span>
-          </h1>
-          <p className="text-gray-700 max-w-2xl text-lg leading-relaxed">
-            Stay in control of your money. Track every shilling with ease and
-            visualize your financial story beautifully.
-          </p>
-        </div>
+        <Wallet className="w-16 h-16 text-orange-500 mb-4 animate-bounce" />
+        <h1 className="text-5xl font-extrabold text-orange-600 mb-3">
+          Welcome to <span className="text-gray-800">ExpenseMate</span>
+        </h1>
+        <p className="text-gray-700 max-w-2xl mx-auto text-lg">
+          Track your spending. Stay in control. Build your financial confidence.
+        </p>
       </section>
 
-      {/* 💰 Expense Form Section */}
       <main className="flex flex-col items-center flex-grow py-12 px-6">
-        <div className="bg-white shadow-2xl rounded-2xl p-8 w-full max-w-4xl border border-orange-100 transform transition-all hover:scale-[1.01] hover:shadow-orange-200/80">
+        <div className="bg-white shadow-2xl rounded-2xl p-8 w-full max-w-4xl border border-orange-100">
           <h2 className="text-3xl font-bold text-orange-600 mb-6 text-center">
             {editing ? "Edit Expense" : "Add a New Expense"}
           </h2>
@@ -66,7 +203,6 @@ const LandingPage = () => {
           />
         </div>
 
-        {/* 💹 Expense List Section */}
         <div className="mt-12 w-full max-w-5xl">
           <h3 className="text-2xl font-semibold text-orange-700 mb-4 flex items-center gap-2">
             <TrendingUp className="w-6 h-6 text-orange-500" />
@@ -82,7 +218,7 @@ const LandingPage = () => {
               <ExpenseList
                 expenses={expenses}
                 categories={categories}
-                onEdit={handleEdit}
+                onEdit={setEditing}
                 onDelete={handleDelete}
               />
             )}
@@ -90,18 +226,6 @@ const LandingPage = () => {
         </div>
       </main>
 
-      {/* 🧡 Motivation Section */}
-      <section className="text-center bg-orange-50 mt-16 py-12 px-6 shadow-inner">
-        <h3 className="text-3xl font-bold text-orange-700 mb-2">
-          Smart Spending Starts Here 💡
-        </h3>
-        <p className="text-gray-700 max-w-2xl mx-auto leading-relaxed">
-          Every small expense you track builds a clearer picture of your
-          financial future. Stay consistent, and let ExpenseMate guide your way.
-        </p>
-      </section>
-
-      {/* 🌇 Footer */}
       <Footer />
     </div>
   );

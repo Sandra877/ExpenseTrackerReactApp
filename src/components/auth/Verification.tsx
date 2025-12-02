@@ -1,66 +1,61 @@
-import Navbar from "../nav/Navbar"
-import { useForm, type SubmitHandler } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup'; //validator
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import Navbar from "../nav/Navbar";
+import { toast } from "react-toastify";
 
+const API_URL = import.meta.env.VITE_API_URL;
 
-type VerifyInputs = {
-    email: string;
-    code: number;
-};
-
-const schema = yup.object({
-    email: yup.string().email('Invalid email').max(100, 'Max 100 characters').required('Email is required'),
-    code: yup.number().min(6, 'Max 6 characters').required('Code is required'),
-});
 export const Verification = () => {
+  const { token } = useParams();
+  const navigate = useNavigate();
+  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
 
-    const {
-        register,
-        handleSubmit,
-        formState: { errors }
-    } = useForm<VerifyInputs>({
-        resolver: yupResolver(schema)
-    })
-    const onSubmit: SubmitHandler<VerifyInputs> = (data) => {
-        console.log(data);
-    }
+  useEffect(() => {
+    const verifyAccount = async () => {
+      if (!token) {
+        setStatus("error");
+        toast.error("Invalid verification link");
+        return;
+      }
 
-    return (
-        <>
-            <Navbar />
-            <div className="flex justify-center items-center min-h-screen bg-base-200 ">
-                <div className="w-full max-w-lg p-8 rounded-xl shadow-lg bg-white">
-                    <h1 className="text-3xl font-bold mb-6 text-center">Verify your Account</h1>
-                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                        <input
-                            type="email"
-                            {...register("email")}
-                            placeholder="Email"
-                            className="input border border-gray-300 rounded w-full p-2 text-lg"
+      try {
+        const res = await fetch(`${API_URL}/api/auth/verify/${token}`);
 
-                        />
-                        {errors.email && (
-                            <span className="text-sm  text-red-700">{errors.email.message}</span>
-                        )}
+        if (!res.ok) {
+          setStatus("error");
+          toast.error("Verification failed");
+          return;
+        }
 
-                        <input
-                            type="number"
-                            {...register("code")}
-                            placeholder="Password"
-                            className="input border border-gray-300 rounded w-full p-2 text-lg"
+        setStatus("success");
+        toast.success("Email verified successfully!");
 
-                        />
-                        {errors.code && (
-                            <span className="text-sm text-red-700">{errors.code.message}</span>
-                        )}
+        setTimeout(() => navigate("/login"), 2000);
 
+      } catch (err) {
+        console.error(err);
+        setStatus("error");
+        toast.error("Something went wrong");
+      }
+    };
 
-                        <button type="submit" className="btn btn-primary w-full mt-4">Verify your Account</button>
-                    </form>
-                </div>
-            </div>
-        </>
-    )
-}
+    verifyAccount();
+  }, []);
 
+  return (
+    <>
+      <Navbar />
+
+      <div className="flex justify-center items-center min-h-screen bg-base-200">
+        <div className="w-full max-w-lg p-8 rounded-xl shadow-lg bg-white text-center">
+
+          {status === "loading" && <h1 className="text-2xl font-bold">Verifying your account...</h1>}
+          {status === "success" && <h1 className="text-2xl font-bold text-green-600">Your account is verified! 🎉</h1>}
+          {status === "error" && <h1 className="text-2xl font-bold text-red-600">Verification failed ❌</h1>}
+
+          <p className="mt-4 text-gray-600">Redirecting...</p>
+        </div>
+      </div>
+    </>
+  );
+};

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import type { Category } from "../assets/ExpenseData/categories";
-
+import { API_URL } from "../api"; 
+import { toast } from "react-toastify";
 
 export type Expense = {
   id: number;
@@ -9,7 +10,7 @@ export type Expense = {
   amount: number;
   currency: string;
   note?: string;
-  expenseDate: string; // ISO date yyyy-mm-dd
+  expenseDate: string;
 };
 
 type Props = {
@@ -18,9 +19,6 @@ type Props = {
   editing?: Expense | null;
   onCancelEdit?: () => void;
 };
-
-
-
 
 const defaultExpense = (): Expense => ({
   id: Date.now(),
@@ -34,27 +32,75 @@ const defaultExpense = (): Expense => ({
 
 const AddExpenseForm: React.FC<Props> = ({ categories, onSave, editing, onCancelEdit }) => {
   const [form, setForm] = useState<Expense>(defaultExpense());
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (editing) setForm(editing);
     else setForm(defaultExpense());
   }, [editing]);
 
-  const handleChange = (k: keyof Expense, v: any) =>
-    setForm((s) => ({ ...s, [k]: v }));
+  const handleChange = (key: keyof Expense, value: any) =>
+    setForm((prev) => ({ ...prev, [key]: value }));
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!form.categoryId) {
-      alert("Please choose a category");
+      toast.error("Please choose a category");
       return;
     }
+
     if (!form.amount || Number(form.amount) <= 0) {
-      alert("Please enter an amount > 0");
+      toast.error("Amount must be greater than 0");
       return;
     }
-    onSave({ ...form, amount: Number(form.amount) });
-    setForm(defaultExpense());
+
+    // Convert categoryId → category name for backend
+    const categoryName = categories.find((c) => c.id === form.categoryId)?.name;
+    if (!categoryName) {
+      toast.error("Invalid category");
+      return;
+    }
+
+    // Payload for your backend format
+    const payload = {
+      title: form.title || "Untitled",
+      amount: Number(form.amount),
+      category: categoryName,
+      date: form.expenseDate,
+    };
+
+    try {
+      setLoading(true);
+
+      const res = await fetch(`${API_URL}/api/expenses`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        console.error(result);
+        toast.error(result.error || "Failed to save expense");
+        setLoading(false);
+        return;
+      }
+
+      toast.success("Expense added!");
+
+      // Update parent UI with original form structure
+      onSave({ ...form, amount: Number(form.amount) });
+
+      // Reset form
+      setForm(defaultExpense());
+    } catch (error) {
+      console.error(error);
+      toast.error("Server error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -64,11 +110,14 @@ const AddExpenseForm: React.FC<Props> = ({ categories, onSave, editing, onCancel
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {/* CATEGORY */}
         <div className="md:col-span-1">
           <label className="block text-sm font-medium text-gray-700">Category</label>
           <select
             value={form.categoryId ?? ""}
-            onChange={(e) => handleChange("categoryId", e.target.value ? Number(e.target.value) : null)}
+            onChange={(e) =>
+              handleChange("categoryId", e.target.value ? Number(e.target.value) : null)
+            }
             className="mt-1 block w-full rounded border-gray-300 px-3 py-2"
           >
             <option value="">Select category</option>
@@ -80,8 +129,11 @@ const AddExpenseForm: React.FC<Props> = ({ categories, onSave, editing, onCancel
           </select>
         </div>
 
+        {/* AMOUNT */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">Amount ({form.currency})</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Amount ({form.currency})
+          </label>
           <input
             type="number"
             step="0.01"
@@ -92,6 +144,7 @@ const AddExpenseForm: React.FC<Props> = ({ categories, onSave, editing, onCancel
           />
         </div>
 
+        {/* DATE */}
         <div>
           <label className="block text-sm font-medium text-gray-700">Date</label>
           <input
@@ -103,6 +156,7 @@ const AddExpenseForm: React.FC<Props> = ({ categories, onSave, editing, onCancel
         </div>
       </div>
 
+      {/* NOTE */}
       <div className="mt-3">
         <label className="block text-sm font-medium text-gray-700">Note (optional)</label>
         <input
@@ -110,16 +164,18 @@ const AddExpenseForm: React.FC<Props> = ({ categories, onSave, editing, onCancel
           value={form.note}
           onChange={(e) => handleChange("note", e.target.value)}
           className="mt-1 block w-full rounded border-gray-300 px-3 py-2"
-          placeholder="e.g., Groceries at Nakumatt"
+          placeholder="e.g., Groceries at Naivas"
         />
       </div>
 
+      {/* BUTTONS */}
       <div className="mt-4 flex gap-3">
         <button
           type="submit"
-          className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-4 py-2 rounded"
+          disabled={loading}
+          className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-4 py-2 rounded disabled:opacity-50"
         >
-          {editing ? "Save Changes" : "Add Expense"}
+          {loading ? "Saving..." : editing ? "Save Changes" : "Add Expense"}
         </button>
 
         {editing && onCancelEdit && (

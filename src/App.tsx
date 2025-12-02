@@ -33,6 +33,11 @@ function App() {
       path: '/register',
       element: <Register />
     },
+
+     {
+      path: '/verify/:token',
+      element: <Verification />
+    },
     {
       path: '/login',
       element: <Login />
