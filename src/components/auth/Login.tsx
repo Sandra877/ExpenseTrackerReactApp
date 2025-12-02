@@ -41,7 +41,6 @@ export const Login = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
-        credentials: "include", // only needed if backend sets cookies
       });
 
       const result = await res.json();
@@ -52,7 +51,7 @@ export const Login = () => {
         return;
       }
       localStorage.setItem("token", result.token);
-      
+
       toast.success("Login successful!", {
         icon: <FaCheckCircle color="green" />,
         autoClose: 1500,
