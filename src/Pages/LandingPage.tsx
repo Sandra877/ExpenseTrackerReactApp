@@ -106,9 +106,50 @@ const LandingPage = () => {
         toast.success("Expense updated!");
         setEditing(null);
 
-        setExpenses(prev =>
-          prev.map(e => (e.id === expense.id ? expense : e))
-        );
+        // Refresh expenses from backend to ensure we have the latest data
+        // and avoid duplicates
+        const fetchUpdatedExpenses = async () => {
+          try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            const res = await fetch(`${API_URL}/api/expenses`, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            });
+
+            const response = await res.json();
+
+            if (!res.ok) {
+              toast.error(response.error || "Failed to fetch updated expenses");
+              return;
+            }
+
+            const items = response.data;
+            const converted = items.map((item: any) => {
+              const categoryObj = categories.find(c => c.name === item.category);
+
+              return {
+                id: item.id,
+                title: item.title,
+                amount: item.amount,
+                note: item.note || "",
+                currency: "KES",
+                expenseDate: item.date,
+                categoryId: categoryObj ? categoryObj.id : null,
+              };
+            });
+
+            setExpenses(converted);
+          } catch (error) {
+            console.error(error);
+            toast.error("Error loading updated expenses");
+          }
+        };
+
+        await fetchUpdatedExpenses();
       } else {
         // CREATE (POST)
         const res = await fetch(`${API_URL}/api/expenses`, {
@@ -129,13 +170,50 @@ const LandingPage = () => {
 
         toast.success("Expense added!");
 
-        setExpenses(prev => [
-          {
-            ...expense,
-            id: created.id, // backend returns { id: ... }
-          },
-          ...prev,
-        ]);
+        // Refresh expenses from backend to ensure we have the latest data
+        // and avoid duplicates
+        const fetchUpdatedExpenses = async () => {
+          try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            const res = await fetch(`${API_URL}/api/expenses`, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            });
+
+            const response = await res.json();
+
+            if (!res.ok) {
+              toast.error(response.error || "Failed to fetch updated expenses");
+              return;
+            }
+
+            const items = response.data;
+            const converted = items.map((item: any) => {
+              const categoryObj = categories.find(c => c.name === item.category);
+
+              return {
+                id: item.id,
+                title: item.title,
+                amount: item.amount,
+                note: item.note || "",
+                currency: "KES",
+                expenseDate: item.date,
+                categoryId: categoryObj ? categoryObj.id : null,
+              };
+            });
+
+            setExpenses(converted);
+          } catch (error) {
+            console.error(error);
+            toast.error("Error loading updated expenses");
+          }
+        };
+
+        await fetchUpdatedExpenses();
       }
     } catch (err) {
       console.error(err);

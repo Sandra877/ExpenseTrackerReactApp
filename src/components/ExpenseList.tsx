@@ -17,8 +17,12 @@ type Props = {
 
 const groupByMonthThenDate = (expenses: Expense[]) => {
   const byMonth: Record<string, Record<string, Expense[]>> = {};
+  // Remove duplicates by ID first
+  const uniqueExpenses = expenses.filter((expense, index, self) =>
+    index === self.findIndex((e) => e.id === expense.id)
+  );
   // sort descending by date
-  const sorted = [...expenses].sort((a, b) => (a.expenseDate < b.expenseDate ? 1 : -1));
+  const sorted = [...uniqueExpenses].sort((a, b) => (a.expenseDate < b.expenseDate ? 1 : -1));
   sorted.forEach((e) => {
     const month = e.expenseDate.slice(0, 7); // yyyy-mm
     const date = e.expenseDate; // full
