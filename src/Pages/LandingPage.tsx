@@ -38,6 +38,7 @@ const LandingPage = () => {
         }
 
         const items = response.data; // backend sends { data: [...] }
+        console.log("Backend response items (initial fetch):", items);
 
         const converted = items.map((item: any) => {
           const categoryObj = categories.find(c => c.name === item.category);
@@ -53,6 +54,7 @@ const LandingPage = () => {
           };
         });
 
+        console.log("Converted expenses (initial fetch):", converted);
         setExpenses(converted);
       } catch (error) {
         console.error(error);
@@ -128,6 +130,7 @@ const LandingPage = () => {
             }
 
             const items = response.data;
+            console.log("Backend response items (refresh after edit):", items);
             const converted = items.map((item: any) => {
               const categoryObj = categories.find(c => c.name === item.category);
 
@@ -142,6 +145,7 @@ const LandingPage = () => {
               };
             });
 
+            console.log("Converted expenses (refresh after edit):", converted);
             setExpenses(converted);
           } catch (error) {
             console.error(error);
@@ -192,6 +196,7 @@ const LandingPage = () => {
             }
 
             const items = response.data;
+            console.log("Backend response items (refresh after create):", items);
             const converted = items.map((item: any) => {
               const categoryObj = categories.find(c => c.name === item.category);
 
@@ -206,6 +211,7 @@ const LandingPage = () => {
               };
             });
 
+            console.log("Converted expenses (refresh after create):", converted);
             setExpenses(converted);
           } catch (error) {
             console.error(error);

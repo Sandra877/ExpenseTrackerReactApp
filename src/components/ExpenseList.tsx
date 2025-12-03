@@ -41,7 +41,9 @@ const monthLabel = (monthKey: string) => {
 };
 
 const ExpenseList: React.FC<Props> = ({ expenses, categories, onEdit, onDelete }) => {
+  console.log("ExpenseList received expenses:", expenses);
   const grouped = groupByMonthThenDate(expenses);
+  console.log("ExpenseList grouped data:", grouped);
 
   return (
     <div className="space-y-6">
