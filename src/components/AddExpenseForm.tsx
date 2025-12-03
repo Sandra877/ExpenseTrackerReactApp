@@ -73,9 +73,15 @@ const AddExpenseForm: React.FC<Props> = ({ categories, onSave, editing, onCancel
     try {
       setLoading(true);
 
+      // Get the authentication token from localStorage
+      const token = localStorage.getItem("token");
+
       const res = await fetch(`${API_URL}/api/expenses`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify(payload),
       });
 
