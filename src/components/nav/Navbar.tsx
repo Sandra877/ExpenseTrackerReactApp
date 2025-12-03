@@ -1,6 +1,17 @@
 import { FaBars } from "react-icons/fa";
-import { NavLink } from "react-router";
+import { NavLink, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+
 const Navbar = () => {
+    const navigate = useNavigate();
+    const isAuthenticated = !!localStorage.getItem("token");
+
+    const handleLogout = () => {
+        localStorage.removeItem("token");
+        toast.success("Logged out successfully");
+        navigate("/");
+    };
+
     return (
         <div>
             <div className="navbar bg-base-100 shadow-sm">
@@ -21,13 +32,21 @@ const Navbar = () => {
                              <li>
                                 <NavLink to="/contactus">Contact Us</NavLink>
                             </li>
-                            
-                            <li>
-                                <NavLink to="/register">Register</NavLink>
-                            </li>
-                            <li>
-                                <NavLink to="/login">Login</NavLink>
-                            </li>
+
+                            {!isAuthenticated ? (
+                                <>
+                                    <li>
+                                        <NavLink to="/register">Register</NavLink>
+                                    </li>
+                                    <li>
+                                        <NavLink to="/login">Login</NavLink>
+                                    </li>
+                                </>
+                            ) : (
+                                <li>
+                                    <button onClick={handleLogout}>Logout</button>
+                                </li>
+                            )}
 
                         </ul>
                     </div>
@@ -43,24 +62,32 @@ const Navbar = () => {
                         <li>
                             <NavLink to="/about">About</NavLink>
                         </li>
-                        <li>
+                            <li>
                                 <NavLink to="/contactus">Contact Us</NavLink>
-                        </li>
-                        
+                            </li>
+
                     </ul>
                 </div>
-                
+
                 {/* hide these on small screens */}
                 <div className="navbar-end hidden md:flex">
                     <ul
                         tabIndex={-1}
                         className="menu menu-horizontal dropdown-content bg-base-100 rounded-box z-1 mt-3 p-2 shadow">
-                        <li>
-                            <NavLink to="/register">Register</NavLink>
-                        </li>
-                        <li>
-                            <NavLink to="/login">Login</NavLink>
-                        </li>
+                        {!isAuthenticated ? (
+                            <>
+                                <li>
+                                    <NavLink to="/register">Register</NavLink>
+                                </li>
+                                <li>
+                                    <NavLink to="/login">Login</NavLink>
+                                </li>
+                            </>
+                        ) : (
+                            <li>
+                                <button onClick={handleLogout}>Logout</button>
+                            </li>
+                        )}
 
                     </ul>
                 </div>
@@ -69,5 +96,4 @@ const Navbar = () => {
         </div>
     )
 }
-
 export default Navbar

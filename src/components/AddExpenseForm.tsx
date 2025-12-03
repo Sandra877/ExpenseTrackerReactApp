@@ -62,7 +62,7 @@ const AddExpenseForm: React.FC<Props> = ({ categories, onSave, editing, onCancel
       return;
     }
 
-    // Payload for your backend format
+    // Payload for your backend format - try minimal fields first
     const payload = {
       title: form.title || "Untitled",
       amount: Number(form.amount),
@@ -89,13 +89,12 @@ const AddExpenseForm: React.FC<Props> = ({ categories, onSave, editing, onCancel
 
       if (!res.ok) {
         console.error(result);
-        toast.error(result.error || "Failed to save expense");
+        // Don't show toast here - let parent component handle it
         setLoading(false);
         return;
       }
 
-      toast.success("Expense added!");
-
+      // Don't show toast here - let parent component handle it
       // Update parent UI with original form structure
       onSave({ ...form, amount: Number(form.amount) });
 
