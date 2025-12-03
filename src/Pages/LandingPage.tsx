@@ -40,7 +40,26 @@ const LandingPage = () => {
         const items = response.data; // backend sends { data: [...] }
         console.log("Backend response items (initial fetch):", items);
 
-        const converted = items.map((item: any) => {
+        // Debug: Check for duplicates in backend response
+        const idCounts: Record<number, number> = {};
+        items.forEach((item: any) => {
+          idCounts[item.id] = (idCounts[item.id] || 0) + 1;
+        });
+        console.log("ID counts in backend response:", idCounts);
+
+        // Filter out duplicates - keep only the first occurrence of each ID
+        const uniqueItems: any[] = [];
+        const seenIds = new Set<number>();
+        items.forEach((item: any) => {
+          if (!seenIds.has(item.id)) {
+            seenIds.add(item.id);
+            uniqueItems.push(item);
+          }
+        });
+
+        console.log(`Found ${items.length} items from backend, ${uniqueItems.length} unique items after deduplication`);
+
+        const converted = uniqueItems.map((item: any) => {
           const categoryObj = categories.find(c => c.name === item.category);
 
           return {
@@ -131,7 +150,27 @@ const LandingPage = () => {
 
             const items = response.data;
             console.log("Backend response items (refresh after edit):", items);
-            const converted = items.map((item: any) => {
+
+            // Debug: Check for duplicates in backend response
+            const idCounts: Record<number, number> = {};
+            items.forEach((item: any) => {
+              idCounts[item.id] = (idCounts[item.id] || 0) + 1;
+            });
+            console.log("ID counts in backend response (edit):", idCounts);
+
+            // Filter out duplicates - keep only the first occurrence of each ID
+            const uniqueItems: any[] = [];
+            const seenIds = new Set<number>();
+            items.forEach((item: any) => {
+              if (!seenIds.has(item.id)) {
+                seenIds.add(item.id);
+                uniqueItems.push(item);
+              }
+            });
+
+            console.log(`Found ${items.length} items from backend, ${uniqueItems.length} unique items after deduplication (edit)`);
+
+            const converted = uniqueItems.map((item: any) => {
               const categoryObj = categories.find(c => c.name === item.category);
 
               return {
@@ -197,7 +236,27 @@ const LandingPage = () => {
 
             const items = response.data;
             console.log("Backend response items (refresh after create):", items);
-            const converted = items.map((item: any) => {
+
+            // Debug: Check for duplicates in backend response
+            const idCounts: Record<number, number> = {};
+            items.forEach((item: any) => {
+              idCounts[item.id] = (idCounts[item.id] || 0) + 1;
+            });
+            console.log("ID counts in backend response (create):", idCounts);
+
+            // Filter out duplicates - keep only the first occurrence of each ID
+            const uniqueItems: any[] = [];
+            const seenIds = new Set<number>();
+            items.forEach((item: any) => {
+              if (!seenIds.has(item.id)) {
+                seenIds.add(item.id);
+                uniqueItems.push(item);
+              }
+            });
+
+            console.log(`Found ${items.length} items from backend, ${uniqueItems.length} unique items after deduplication (create)`);
+
+            const converted = uniqueItems.map((item: any) => {
               const categoryObj = categories.find(c => c.name === item.category);
 
               return {
