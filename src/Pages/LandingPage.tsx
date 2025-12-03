@@ -14,9 +14,9 @@ const LandingPage = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [editing, setEditing] = useState<Expense | null>(null);
 
-  // ------------------------------
-  // 🔥 1. GET expenses on page load
-  // ------------------------------
+  // ----------------------------------------------------
+  // 🔥 1. LOAD EXPENSES ON PAGE LOAD
+  // ----------------------------------------------------
   useEffect(() => {
     const fetchExpenses = async () => {
       try {
@@ -30,15 +30,16 @@ const LandingPage = () => {
           },
         });
 
-        const data = await res.json();
+        const response = await res.json();
 
         if (!res.ok) {
-          toast.error(data.error || "Failed to fetch expenses");
+          toast.error(response.error || "Failed to fetch expenses");
           return;
         }
 
-        // Map backend format to frontend format
-        const converted = data.map((item: any) => {
+        const items = response.data; // backend sends { data: [...] }
+
+        const converted = items.map((item: any) => {
           const categoryObj = categories.find(c => c.name === item.category);
 
           return {
@@ -62,11 +63,12 @@ const LandingPage = () => {
     fetchExpenses();
   }, []);
 
-  // ----------------------------------------
-  // 🔥 2. ADD or EDIT expense (POST or PUT)
-  // ----------------------------------------
+  // ----------------------------------------------------
+  // 🔥 2. ADD or EDIT EXPENSE (POST or PUT)
+  // ----------------------------------------------------
   const handleSave = async (expense: Expense) => {
     const token = localStorage.getItem("token");
+
     if (!token) {
       toast.error("Not authenticated");
       return;
@@ -79,13 +81,12 @@ const LandingPage = () => {
       amount: expense.amount,
       category: categoryName,
       date: expense.expenseDate,
+      note: expense.note || "",
     };
 
     try {
       if (editing) {
-        // --------------------------
-        // 🔥 EDIT (PUT)
-        // --------------------------
+        // UPDATE (PUT)
         const res = await fetch(`${API_URL}/api/expenses/${expense.id}`, {
           method: "PUT",
           headers: {
@@ -95,24 +96,21 @@ const LandingPage = () => {
           body: JSON.stringify(payload),
         });
 
+        const updated = await res.json();
+
         if (!res.ok) {
-          const data = await res.json();
-          toast.error(data.error || "Failed to update expense");
+          toast.error(updated.error || "Failed to update expense");
           return;
         }
 
         toast.success("Expense updated!");
+        setEditing(null);
 
         setExpenses(prev =>
           prev.map(e => (e.id === expense.id ? expense : e))
         );
-
-        setEditing(null);
-
       } else {
-        // --------------------------
-        // 🔥 ADD (POST)
-        // --------------------------
+        // CREATE (POST)
         const res = await fetch(`${API_URL}/api/expenses`, {
           method: "POST",
           headers: {
@@ -131,24 +129,23 @@ const LandingPage = () => {
 
         toast.success("Expense added!");
 
-        // Convert backend id → frontend
         setExpenses(prev => [
           {
             ...expense,
-            id: created.id,
+            id: created.id, // backend returns { id: ... }
           },
           ...prev,
         ]);
       }
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error(err);
       toast.error("Server error");
     }
   };
 
-  // ------------------------
-  // 🔥 3. DELETE expense
-  // ------------------------
+  // ----------------------------------------------------
+  // 🔥 3. DELETE EXPENSE
+  // ----------------------------------------------------
   const handleDelete = async (id: number) => {
     const token = localStorage.getItem("token");
 
@@ -164,7 +161,6 @@ const LandingPage = () => {
     }
 
     toast.success("Expense deleted");
-
     setExpenses(prev => prev.filter(e => e.id !== id));
 
     if (editing && editing.id === id) {
@@ -172,9 +168,9 @@ const LandingPage = () => {
     }
   };
 
-  // ------------------------
-  // RENDER PAGE UI
-  // ------------------------
+  // ----------------------------------------------------
+  // UI
+  // ----------------------------------------------------
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-orange-50 via-white to-orange-100">
       <Navbar />
