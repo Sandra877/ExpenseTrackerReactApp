@@ -15,85 +15,55 @@ const LandingPage = () => {
   const [editing, setEditing] = useState<Expense | null>(null);
 
   // ----------------------------------------------------
-  // 🔥 1. LOAD EXPENSES ON PAGE LOAD
+  // 1️⃣ Load all expenses on page load
   // ----------------------------------------------------
-  useEffect(() => {
-    const fetchExpenses = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) return;
+  const loadExpenses = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
 
-        const res = await fetch(`${API_URL}/api/expenses`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+      const res = await fetch(`${API_URL}/api/expenses`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-        const response = await res.json();
+      const data = await res.json();
 
-        if (!res.ok) {
-          toast.error(response.error || "Failed to fetch expenses");
-          return;
-        }
-
-        const items = response.data; // backend sends { data: [...] }
-        console.log("Backend response items (initial fetch):", items);
-
-        // Debug: Check for duplicates in backend response
-        const idCounts: Record<number, number> = {};
-        items.forEach((item: any) => {
-          idCounts[item.id] = (idCounts[item.id] || 0) + 1;
-        });
-        console.log("ID counts in backend response:", idCounts);
-
-        // Filter out duplicates - keep only the first occurrence of each ID
-        const uniqueItems: any[] = [];
-        const seenIds = new Set<number>();
-        items.forEach((item: any) => {
-          if (!seenIds.has(item.id)) {
-            seenIds.add(item.id);
-            uniqueItems.push(item);
-          }
-        });
-
-        console.log(`Found ${items.length} items from backend, ${uniqueItems.length} unique items after deduplication`);
-
-        const converted = uniqueItems.map((item: any) => {
-          const categoryObj = categories.find(c => c.name === item.category);
-
-          return {
-            id: item.id,
-            title: item.title,
-            amount: item.amount,
-            note: item.note || "",
-            currency: "KES",
-            expenseDate: item.date,
-            categoryId: categoryObj ? categoryObj.id : null,
-          };
-        });
-
-        console.log("Converted expenses (initial fetch):", converted);
-        setExpenses(converted);
-      } catch (error) {
-        console.error(error);
-        toast.error("Error loading expenses");
+      if (!res.ok) {
+        toast.error(data.error || "Failed to load expenses");
+        return;
       }
-    };
 
-    fetchExpenses();
+      const converted = data.data.map((item: any) => {
+        const categoryObj = categories.find(c => c.name === item.category);
+
+        return {
+          id: item.id,
+          title: item.title,
+          amount: item.amount,
+          note: item.note || "",
+          currency: "KES",
+          expenseDate: item.date,
+          categoryId: categoryObj ? categoryObj.id : null,
+        };
+      });
+
+      setExpenses(converted);
+    } catch (error) {
+      console.error(error);
+      toast.error("Error loading expenses");
+    }
+  };
+
+  useEffect(() => {
+    loadExpenses();
   }, []);
 
   // ----------------------------------------------------
-  // 🔥 2. ADD or EDIT EXPENSE (POST or PUT)
+  // 2️⃣ Add or Edit an expense
   // ----------------------------------------------------
   const handleSave = async (expense: Expense) => {
     const token = localStorage.getItem("token");
-
-    if (!token) {
-      toast.error("Not authenticated");
-      return;
-    }
+    if (!token) return toast.error("Not authenticated");
 
     const categoryName = categories.find(c => c.id === expense.categoryId)?.name;
 
@@ -106,9 +76,12 @@ const LandingPage = () => {
     };
 
     try {
+      let res;
+      let data;
+
       if (editing) {
-        // UPDATE (PUT)
-        const res = await fetch(`${API_URL}/api/expenses/${expense.id}`, {
+        // PUT UPDATE
+        res = await fetch(`${API_URL}/api/expenses/${expense.id}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -117,85 +90,19 @@ const LandingPage = () => {
           body: JSON.stringify(payload),
         });
 
-        const updated = await res.json();
+        data = await res.json();
 
         if (!res.ok) {
-          toast.error(updated.error || "Failed to update expense");
+          toast.error(data.error || "Failed to update expense");
           return;
         }
 
         toast.success("Expense updated!");
         setEditing(null);
 
-        // Refresh expenses from backend to ensure we have the latest data
-        // and avoid duplicates
-        const fetchUpdatedExpenses = async () => {
-          try {
-            const token = localStorage.getItem("token");
-            if (!token) return;
-
-            const res = await fetch(`${API_URL}/api/expenses`, {
-              method: "GET",
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            });
-
-            const response = await res.json();
-
-            if (!res.ok) {
-              toast.error(response.error || "Failed to fetch updated expenses");
-              return;
-            }
-
-            const items = response.data;
-            console.log("Backend response items (refresh after edit):", items);
-
-            // Debug: Check for duplicates in backend response
-            const idCounts: Record<number, number> = {};
-            items.forEach((item: any) => {
-              idCounts[item.id] = (idCounts[item.id] || 0) + 1;
-            });
-            console.log("ID counts in backend response (edit):", idCounts);
-
-            // Filter out duplicates - keep only the first occurrence of each ID
-            const uniqueItems: any[] = [];
-            const seenIds = new Set<number>();
-            items.forEach((item: any) => {
-              if (!seenIds.has(item.id)) {
-                seenIds.add(item.id);
-                uniqueItems.push(item);
-              }
-            });
-
-            console.log(`Found ${items.length} items from backend, ${uniqueItems.length} unique items after deduplication (edit)`);
-
-            const converted = uniqueItems.map((item: any) => {
-              const categoryObj = categories.find(c => c.name === item.category);
-
-              return {
-                id: item.id,
-                title: item.title,
-                amount: item.amount,
-                note: item.note || "",
-                currency: "KES",
-                expenseDate: item.date,
-                categoryId: categoryObj ? categoryObj.id : null,
-              };
-            });
-
-            console.log("Converted expenses (refresh after edit):", converted);
-            setExpenses(converted);
-          } catch (error) {
-            console.error(error);
-            toast.error("Error loading updated expenses");
-          }
-        };
-
-        await fetchUpdatedExpenses();
       } else {
-        // CREATE (POST)
-        const res = await fetch(`${API_URL}/api/expenses`, {
+        // POST CREATE
+        res = await fetch(`${API_URL}/api/expenses`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -204,82 +111,19 @@ const LandingPage = () => {
           body: JSON.stringify(payload),
         });
 
-        const created = await res.json();
+        data = await res.json();
 
         if (!res.ok) {
-          toast.error(created.error || "Failed to add expense");
+          toast.error(data.error || "Failed to add expense");
           return;
         }
 
         toast.success("Expense added!");
-
-        // Refresh expenses from backend to ensure we have the latest data
-        // and avoid duplicates
-        const fetchUpdatedExpenses = async () => {
-          try {
-            const token = localStorage.getItem("token");
-            if (!token) return;
-
-            const res = await fetch(`${API_URL}/api/expenses`, {
-              method: "GET",
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            });
-
-            const response = await res.json();
-
-            if (!res.ok) {
-              toast.error(response.error || "Failed to fetch updated expenses");
-              return;
-            }
-
-            const items = response.data;
-            console.log("Backend response items (refresh after create):", items);
-
-            // Debug: Check for duplicates in backend response
-            const idCounts: Record<number, number> = {};
-            items.forEach((item: any) => {
-              idCounts[item.id] = (idCounts[item.id] || 0) + 1;
-            });
-            console.log("ID counts in backend response (create):", idCounts);
-
-            // Filter out duplicates - keep only the first occurrence of each ID
-            const uniqueItems: any[] = [];
-            const seenIds = new Set<number>();
-            items.forEach((item: any) => {
-              if (!seenIds.has(item.id)) {
-                seenIds.add(item.id);
-                uniqueItems.push(item);
-              }
-            });
-
-            console.log(`Found ${items.length} items from backend, ${uniqueItems.length} unique items after deduplication (create)`);
-
-            const converted = uniqueItems.map((item: any) => {
-              const categoryObj = categories.find(c => c.name === item.category);
-
-              return {
-                id: item.id,
-                title: item.title,
-                amount: item.amount,
-                note: item.note || "",
-                currency: "KES",
-                expenseDate: item.date,
-                categoryId: categoryObj ? categoryObj.id : null,
-              };
-            });
-
-            console.log("Converted expenses (refresh after create):", converted);
-            setExpenses(converted);
-          } catch (error) {
-            console.error(error);
-            toast.error("Error loading updated expenses");
-          }
-        };
-
-        await fetchUpdatedExpenses();
       }
+
+      // Load fresh list after change
+      await loadExpenses();
+
     } catch (err) {
       console.error(err);
       toast.error("Server error");
@@ -287,28 +131,26 @@ const LandingPage = () => {
   };
 
   // ----------------------------------------------------
-  // 🔥 3. DELETE EXPENSE
+  // 3️⃣ Delete expense
   // ----------------------------------------------------
   const handleDelete = async (id: number) => {
     const token = localStorage.getItem("token");
+    if (!token) return;
 
     const res = await fetch(`${API_URL}/api/expenses/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
 
+    const data = await res.json();
+
     if (!res.ok) {
-      const error = await res.json();
-      toast.error(error.error || "Failed to delete expense");
+      toast.error(data.error || "Failed to delete");
       return;
     }
 
     toast.success("Expense deleted");
-    setExpenses(prev => prev.filter(e => e.id !== id));
-
-    if (editing && editing.id === id) {
-      setEditing(null);
-    }
+    loadExpenses();
   };
 
   // ----------------------------------------------------
