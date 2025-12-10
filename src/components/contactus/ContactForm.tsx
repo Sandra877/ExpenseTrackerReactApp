@@ -1,6 +1,5 @@
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
-import { jwtDecode } from "jwt-decode";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -11,9 +10,7 @@ type ContactInputs = {
   message: string;
 };
 
-type JwtPayload = {
-  isVerified: boolean;
-};
+
 
 const ContactForm = () => {
   const {
@@ -23,52 +20,39 @@ const ContactForm = () => {
     formState: { errors },
   } = useForm<ContactInputs>();
 
-  const onSubmit = async (data: ContactInputs) => {
-    const token = localStorage.getItem("token");
+  
+   const onSubmit = async (data: ContactInputs) => {
+  const token = localStorage.getItem("token");
 
-    if (!token) {
-      toast.error("Please log in to send a message");
+  if (!token) {
+    toast.error("Please log in to send a message");
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_URL}/api/messages/contact`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    const json = await res.json();
+
+    if (!res.ok) {
+      toast.error(json.error || "Failed to send message");
       return;
     }
 
-    // ✅ Check verification status from token
-    try {
-      const decoded = jwtDecode<JwtPayload>(token);
+    toast.success("Message sent successfully!");
+    reset();
+  } catch {
+    toast.error("Server error. Please try again.");
+  }
+};
 
-      if (!decoded.isVerified) {
-        toast.error("Please verify your account before contacting us");
-        return;
-      }
-    } catch {
-      toast.error("Invalid session. Please log in again.");
-      return;
-    }
-
-    try {
-      const res = await fetch(`${API_URL}/api/messages/contact`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(data),
-      });
-
-      const json = await res.json();
-
-      if (!res.ok) {
-        toast.error(json.error || "Failed to send message");
-        return;
-      }
-
-      toast.success("Message sent successfully!");
-      reset();
-
-    } catch (err) {
-      console.error(err);
-      toast.error("Server error. Please try again.");
-    }
-  };
 
   return (
     <section className="py-16 px-6 md:px-20 flex justify-center bg-white">
