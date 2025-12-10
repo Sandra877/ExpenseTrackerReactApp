@@ -1,11 +1,18 @@
-// src/components/contact/ContactForm.tsx
 import { useForm } from "react-hook-form";
+import { toast } from "react-toastify";
+import { jwtDecode } from "jwt-decode";
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 type ContactInputs = {
   name: string;
   email: string;
   subject: string;
   message: string;
+};
+
+type JwtPayload = {
+  isVerified: boolean;
 };
 
 const ContactForm = () => {
@@ -16,10 +23,51 @@ const ContactForm = () => {
     formState: { errors },
   } = useForm<ContactInputs>();
 
-  const onSubmit = (data: ContactInputs) => {
-    console.log("Message sent:", data);
-    alert("Your message has been sent successfully!");
-    reset();
+  const onSubmit = async (data: ContactInputs) => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      toast.error("Please log in to send a message");
+      return;
+    }
+
+    // ✅ Check verification status from token
+    try {
+      const decoded = jwtDecode<JwtPayload>(token);
+
+      if (!decoded.isVerified) {
+        toast.error("Please verify your account before contacting us");
+        return;
+      }
+    } catch {
+      toast.error("Invalid session. Please log in again.");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/api/messages/contact`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        toast.error(json.error || "Failed to send message");
+        return;
+      }
+
+      toast.success("Message sent successfully!");
+      reset();
+
+    } catch (err) {
+      console.error(err);
+      toast.error("Server error. Please try again.");
+    }
   };
 
   return (
@@ -32,59 +80,52 @@ const ContactForm = () => {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
             <input
-              type="text"
               {...register("name", { required: "Name is required" })}
               placeholder="Your Name"
-              className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+              className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-orange-400"
             />
             {errors.name && (
-              <p className="text-red-600 text-sm mt-1">{errors.name.message}</p>
+              <p className="text-red-600 text-sm">{errors.name.message}</p>
             )}
           </div>
 
           <div>
             <input
-              type="email"
               {...register("email", { required: "Email is required" })}
               placeholder="Your Email"
-              className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+              className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-orange-400"
             />
             {errors.email && (
-              <p className="text-red-600 text-sm mt-1">{errors.email.message}</p>
+              <p className="text-red-600 text-sm">{errors.email.message}</p>
             )}
           </div>
 
           <div>
             <input
-              type="text"
               {...register("subject", { required: "Subject is required" })}
               placeholder="Subject"
-              className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+              className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-orange-400"
             />
             {errors.subject && (
-              <p className="text-red-600 text-sm mt-1">
-                {errors.subject.message}
-              </p>
+              <p className="text-red-600 text-sm">{errors.subject.message}</p>
             )}
           </div>
 
           <div>
             <textarea
               {...register("message", { required: "Message is required" })}
-              placeholder="Write your message..."
               rows={4}
-              className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+              placeholder="Write your message..."
+              className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-orange-400"
             />
             {errors.message && (
-              <p className="text-red-600 text-sm mt-1">
-                {errors.message.message}
-              </p>
+              <p className="text-red-600 text-sm">{errors.message.message}</p>
             )}
           </div>
 
           <button
             type="submit"
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg shadow-md transition-colors"
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg shadow-md"
           >
             Send Message
           </button>
