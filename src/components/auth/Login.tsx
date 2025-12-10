@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { FaCheckCircle } from "react-icons/fa";
 import { useState } from "react";
+import { jwtDecode } from "jwt-decode";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -14,9 +15,19 @@ type LoginInputs = {
   password: string;
 };
 
+type JwtPayload = {
+  id: number;
+  email: string;
+  role: "admin" | "user";
+  exp: number;
+};
+
 const schema = yup.object({
   email: yup.string().email("Invalid email").required("Email is required"),
-  password: yup.string().min(6, "Min 6 characters").required("Password is required"),
+  password: yup
+    .string()
+    .min(6, "Min 6 characters")
+    .required("Password is required"),
 });
 
 export const Login = () => {
@@ -37,9 +48,7 @@ export const Login = () => {
     try {
       const res = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
 
@@ -47,19 +56,28 @@ export const Login = () => {
 
       if (!res.ok) {
         toast.error(result.error || "Invalid email or password");
-        setLoading(false);
         return;
       }
+
+      // ✅ save token
       localStorage.setItem("token", result.token);
+
+      // ✅ decode token to get role
+      const decoded = jwtDecode<JwtPayload>(result.token);
 
       toast.success("Login successful!", {
         icon: <FaCheckCircle color="green" />,
-        autoClose: 1500,
+        autoClose: 1200,
       });
 
+      // ✅ role-based redirect
       setTimeout(() => {
-        navigate("/landingpage");
-      }, 1500);
+        if (decoded.role === "admin") {
+          navigate("/admin");
+        } else {
+          navigate("/landingpage");
+        }
+      }, 1200);
 
     } catch (error) {
       console.error("Login error:", error);
@@ -75,8 +93,8 @@ export const Login = () => {
       <div className="flex justify-center items-center min-h-screen bg-base-200">
         <div className="w-full max-w-lg p-8 rounded-xl shadow-lg bg-white">
           <h1 className="text-3xl font-bold mb-6 text-center">Login</h1>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
 
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <input
               type="email"
               {...register("email")}
@@ -84,7 +102,9 @@ export const Login = () => {
               className="input border border-gray-300 rounded w-full p-2 text-lg"
             />
             {errors.email && (
-              <span className="text-sm text-red-700">{errors.email.message}</span>
+              <span className="text-sm text-red-700">
+                {errors.email.message}
+              </span>
             )}
 
             <input
@@ -94,7 +114,9 @@ export const Login = () => {
               className="input border border-gray-300 rounded w-full p-2 text-lg"
             />
             {errors.password && (
-              <span className="text-sm text-red-700">{errors.password.message}</span>
+              <span className="text-sm text-red-700">
+                {errors.password.message}
+              </span>
             )}
 
             <button
