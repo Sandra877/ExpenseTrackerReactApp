@@ -1,9 +1,9 @@
-//import Navbar from "../nav/Navbar";
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import Navbar from '../nav/Navbar';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -74,7 +74,7 @@ export const Register = () => {
 
   return (
     <>
-
+      <Navbar />
       <div className="flex justify-center items-center min-h-screen bg-base-200">
         <div className="w-full max-w-lg p-8 rounded-xl shadow-lg bg-white">
           <h1 className="text-3xl font-bold mb-6 text-center">Account Registration</h1>
