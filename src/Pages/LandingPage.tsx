@@ -15,7 +15,7 @@ const LandingPage = () => {
   const [editing, setEditing] = useState<Expense | null>(null);
 
   // ----------------------------------------------------
-  // 1️⃣ Load all expenses on page load
+  //  Load all expenses on page load
   // ----------------------------------------------------
   const loadExpenses = async () => {
     try {
@@ -157,10 +157,10 @@ const LandingPage = () => {
   // UI
   // ----------------------------------------------------
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-orange-50 via-white to-orange-100">
+    <div className="min-h-screen flex flex-col bg-linear-to-b from-orange-50 via-white to-orange-100">
       <Navbar />
 
-      <section className="text-center py-16 px-6 bg-gradient-to-r from-orange-100 to-orange-50 border-b border-orange-200">
+      <section className="text-center py-16 px-6 bg-linear-to-r from-orange-100 to-orange-50 border-b border-orange-200">
         <Wallet className="w-16 h-16 text-orange-500 mb-4 animate-bounce" />
         <h1 className="text-5xl font-extrabold text-orange-600 mb-3">
           Welcome to <span className="text-gray-800">ExpenseMate</span>
@@ -170,7 +170,7 @@ const LandingPage = () => {
         </p>
       </section>
 
-      <main className="flex flex-col items-center flex-grow py-12 px-6">
+      <main className="flex flex-col items-center grow py-12 px-6">
         <div className="bg-white shadow-2xl rounded-2xl p-8 w-full max-w-4xl border border-orange-100">
           <h2 className="text-3xl font-bold text-orange-600 mb-6 text-center">
             {editing ? "Edit Expense" : "Add a New Expense"}

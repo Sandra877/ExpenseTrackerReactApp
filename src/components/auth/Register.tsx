@@ -1,4 +1,4 @@
-import Navbar from "../nav/Navbar";
+//import Navbar from "../nav/Navbar";
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -74,7 +74,6 @@ export const Register = () => {
 
   return (
     <>
-      <Navbar />
 
       <div className="flex justify-center items-center min-h-screen bg-base-200">
         <div className="w-full max-w-lg p-8 rounded-xl shadow-lg bg-white">
