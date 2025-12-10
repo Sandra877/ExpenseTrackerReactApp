@@ -5,6 +5,7 @@ import { Login } from './components/auth/Login';
 import LandingPage from './Pages/LandingPage';
 import NewuserPage from './Pages/NewuserPage';
 import ContactUsPage from './Pages/ContactUsPage';
+import AdminDashboard from './components/admin/adminDashboard';
 import { AboutPage } from './Pages/AboutPage';
 import { Verification } from './components/auth/Verification';
 import Error from "./components/nav/Error";
@@ -20,6 +21,10 @@ function App() {
     {
       path: '/landingpage',
       element: <LandingPage />
+    },
+        {
+      path: '/admin',
+      element: <AdminDashboard />
     },
     {
       path: '/about',
