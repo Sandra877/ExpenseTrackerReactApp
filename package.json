@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "test:e2e": "cypress open",
+    "test:e2e:run": "cypress run",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -32,6 +34,7 @@
     "@types/react-dom": "^19.1.9",
     "@types/react-router-dom": "^5.3.3",
     "@vitejs/plugin-react": "^5.0.4",
+    "cypress": "^15.7.1",
     "daisyui": "^5.4.4",
     "eslint": "^9.36.0",
     "eslint-plugin-react-hooks": "^5.2.0",

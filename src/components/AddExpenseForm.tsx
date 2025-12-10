@@ -58,7 +58,7 @@ const AddExpenseForm: React.FC<Props> = ({ categories, onSave, editing, onCancel
   };
 
   return (
-    <form onSubmit={submit} className="bg-white p-4 md:p-6 rounded-lg shadow">
+    <form onSubmit={submit} className="bg-white p-4 md:p-6 rounded-lg shadow" data-cy="add-expense-form">
       <h2 className="text-xl font-bold text-orange-600 mb-3">
         {editing ? "Edit Expense" : "Add Expense"}
       </h2>
