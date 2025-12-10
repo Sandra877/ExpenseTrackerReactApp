@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import { API_URL } from "../../api";
 
 interface User {
@@ -32,10 +33,16 @@ const AdminDashboard = () => {
   const fetchUsers = async () => {
     try {
       const res = await fetch(`${API_URL}/api/admin/users`, { headers });
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch users");
+      }
+
       const json = await res.json();
       setUsers(json.data || []);
     } catch (err) {
       console.error(err);
+      toast.error("Failed to load users ❌");
     } finally {
       setLoading(false);
     }
@@ -44,40 +51,72 @@ const AdminDashboard = () => {
   // ---------------- EXPENSES ----------------
   const fetchExpenses = async (user: User) => {
     setSelectedUser(user);
+
     try {
       const res = await fetch(
         `${API_URL}/api/admin/user/${user.id}/expenses`,
         { headers }
       );
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch expenses");
+      }
+
       const json = await res.json();
       setExpenses(json.data || []);
     } catch (err) {
       console.error(err);
+      toast.error("Failed to load expenses ❌");
     }
   };
 
   // ---------------- DELETE USER ----------------
   const deleteUser = async (id: number) => {
     if (!confirm("Delete this user?")) return;
-    await fetch(`${API_URL}/api/admin/user/${id}`, {
-      method: "DELETE",
-      headers,
-    });
-    setUsers((prev) => prev.filter((u) => u.id !== id));
-    setSelectedUser(null);
-    setExpenses([]);
+
+    try {
+      const res = await fetch(`${API_URL}/api/admin/user/${id}`, {
+        method: "DELETE",
+        headers,
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to delete user");
+      }
+
+      setUsers((prev) => prev.filter((u) => u.id !== id));
+      setSelectedUser(null);
+      setExpenses([]);
+
+      toast.success("User deleted successfully ✅");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete user ❌");
+    }
   };
 
   // ---------------- PROMOTE USER ----------------
   const promoteUser = async (id: number) => {
     if (!confirm("Promote this user to admin?")) return;
 
-    await fetch(`${API_URL}/api/admin/user/${id}/promote`, {
-      method: "POST",
-      headers,
-    });
+    try {
+      const res = await fetch(`${API_URL}/api/admin/user/${id}/promote`, {
+        method: "POST",
+        headers,
+      });
 
-    fetchUsers();
+      if (!res.ok) {
+        throw new Error("Failed to promote user");
+      }
+
+      toast.success("User promoted to admin ✅");
+
+      // Refresh users so role updates in table
+      fetchUsers();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to promote user ❌");
+    }
   };
 
   useEffect(() => {
@@ -120,14 +159,13 @@ const AdminDashboard = () => {
               >
                 <td className="p-3">{u.email}</td>
                 <td className="p-3 font-medium">{u.role}</td>
-                <td className="p-3">
-                  {u.isVerified ? "✅" : "❌"}
-                </td>
+                <td className="p-3">{u.isVerified ? "✅" : "❌"}</td>
                 <td className="p-3">
                   {new Date(u.createdAt).toLocaleString()}
                 </td>
                 <td className="p-3 flex gap-2 flex-wrap">
                   <button
+                    data-cy="view-expenses-btn"
                     onClick={() => fetchExpenses(u)}
                     className="px-3 py-1 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition"
                   >
@@ -136,6 +174,7 @@ const AdminDashboard = () => {
 
                   {u.role !== "admin" && (
                     <button
+                      data-cy="promote-user-btn"
                       onClick={() => promoteUser(u.id)}
                       className="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
                     >
@@ -144,6 +183,7 @@ const AdminDashboard = () => {
                   )}
 
                   <button
+                    data-cy="delete-user-btn"
                     onClick={() => deleteUser(u.id)}
                     className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition"
                   >
