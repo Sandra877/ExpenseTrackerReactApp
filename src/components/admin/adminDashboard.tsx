@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import { API_URL } from "../../api";
 
 interface User {
@@ -71,53 +71,48 @@ const AdminDashboard = () => {
   };
 
   // ---------------- DELETE USER ----------------
-  const deleteUser = async (id: number) => {
-    if (!confirm("Delete this user?")) return;
+const deleteUser = async (id: number) => {
+  if (!window.confirm("Delete this user?")) return;
 
-    try {
-      const res = await fetch(`${API_URL}/api/admin/user/${id}`, {
-        method: "DELETE",
-        headers,
-      });
+  try {
+    const res = await fetch(`${API_URL}/api/admin/user/${id}`, {
+      method: "DELETE",
+      headers,
+    });
 
-      if (!res.ok) {
-        throw new Error("Failed to delete user");
-      }
+    if (!res.ok) throw new Error();
 
-      setUsers((prev) => prev.filter((u) => u.id !== id));
-      setSelectedUser(null);
-      setExpenses([]);
+    setUsers((prev) => prev.filter((u) => u.id !== id));
+    setSelectedUser(null);
+    setExpenses([]);
 
-      toast.success("User deleted successfully ✅");
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to delete user ❌");
-    }
-  };
+    toast.success("User deleted successfully ✅");
+  } catch {
+    toast.error("Failed to delete user ❌");
+  }
+};
+
 
   // ---------------- PROMOTE USER ----------------
   const promoteUser = async (id: number) => {
-    if (!confirm("Promote this user to admin?")) return;
+  if (!window.confirm("Promote this user to admin?")) return;
 
-    try {
-      const res = await fetch(`${API_URL}/api/admin/user/${id}/promote`, {
-        method: "POST",
-        headers,
-      });
+  try {
+    const res = await fetch(`${API_URL}/api/admin/user/${id}/promote`, {
+      method: "POST",
+      headers,
+    });
 
-      if (!res.ok) {
-        throw new Error("Failed to promote user");
-      }
+    if (!res.ok) throw new Error();
 
-      toast.success("User promoted to admin ✅");
+    toast.success("User promoted to admin ✅");
 
-      // Refresh users so role updates in table
-      fetchUsers();
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to promote user ❌");
-    }
-  };
+    // refresh list so role updates
+    fetchUsers();
+  } catch {
+    toast.error("Failed to promote user ❌");
+  }
+};
 
   useEffect(() => {
     fetchUsers();

@@ -12,11 +12,9 @@ import { Verification } from "./components/auth/Verification";
 import Error from "./components/nav/Error";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { Toaster } from "react-hot-toast";
 
 
 function App() {
-  <Toaster position="top-right" />
 
   const router = createBrowserRouter([
     { path: "/", element: <NewuserPage /> },
