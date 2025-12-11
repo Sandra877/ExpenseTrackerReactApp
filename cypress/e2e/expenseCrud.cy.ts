@@ -6,7 +6,7 @@ describe("Expense CRUD", () => {
 
   let token: string;
 
-  // ✅ Login once via API
+  // Login once via API
   before(() => {
     cy.request({
       method: "POST",
@@ -21,7 +21,7 @@ describe("Expense CRUD", () => {
     });
   });
 
-  // ✅ Visit page with token already set
+  //  Visit page with token already set
   beforeEach(() => {
     cy.visit("/landingpage", {
       onBeforeLoad(win) {
@@ -31,14 +31,14 @@ describe("Expense CRUD", () => {
   });
 
   // ----------------------------------------------------
-  // ✔ TEST 1 — Loads dashboard
+  //TEST 1 — Loads dashboard
   // ----------------------------------------------------
   it("Loads expense dashboard", () => {
     cy.contains("Your Expense Summary", { timeout: 8000 }).should("exist");
   });
 
   // ----------------------------------------------------
-  // ✔ TEST 2 — Creates an expense
+  // TEST 2 — Creates an expense
   // ----------------------------------------------------
   it("Creates an expense successfully", () => {
       cy.get('[data-cy="add-expense-form"]').within(() => {
